@@ -9,79 +9,87 @@ const startBtn = document.getElementById("startBtn");
 const canvas = document.getElementById("chart");
 const ctx = canvas.getContext("2d");
 
-// Forçar dimensões físicas de renderização do canvas
 canvas.width = 800;
 canvas.height = 250;
 ctx.imageSmoothingEnabled = true;
 
-let chartData = [];
+// --- AGORA TEMOS DOIS ARRAYS INDEPENDENTES ---
+let downloadData = [];
+let uploadData = [];
 let animationFrameId = null;
 
-// --- FUNÇÃO DO GRÁFICO DINÂMICO GRADIENTE COM GRADE ---
-// --- FUNÇÃO DO GRÁFICO DINÂMICO GRADIENTE COM GRADE (VERSÃO FORÇADA) ---
+// --- FUNÇÃO DO GRÁFICO COM DUAS LÍNHAS NEON ---
 function drawChart() {
-    // Garante que o canvas sempre tenha o tamanho certo
     ctx.fillStyle = "#0f172a"; 
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     
     const padding = 40;
     
-    // Desenhar Linhas de Grade de Fundo
+    // Grade de fundo
     ctx.strokeStyle = "rgba(255, 255, 255, 0.05)";
     ctx.lineWidth = 1;
     for (let i = padding; i < canvas.width - padding; i += 100) {
-        ctx.beginPath();
-        ctx.moveTo(i, padding);
-        ctx.lineTo(i, canvas.height - padding);
-        ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(i, padding); ctx.lineTo(i, canvas.height - padding); ctx.stroke();
     }
     for (let i = padding; i < canvas.height - padding; i += 40) {
+        ctx.beginPath(); ctx.moveTo(padding, i); ctx.lineTo(canvas.width - padding, i); ctx.stroke();
+    }
+
+    // Encontra o maior valor global para manter a escala correta do gráfico
+    const maxVal = Math.max(...downloadData, ...uploadData, 10);
+
+    // --- 1. DESENHAR LINHA DE DOWNLOAD (AZUL CIANO) ---
+    if (downloadData.length > 0) {
+        let dlPoints = [...downloadData];
+        if (dlPoints.length === 1) dlPoints.push(dlPoints[0]);
+
+        // Linha do Download
         ctx.beginPath();
-        ctx.moveTo(padding, i);
-        ctx.lineTo(canvas.width - padding, i);
-        ctx.stroke();
-    }
-
-    // SE O ARRAY ESTIVER VAZIO, CRIA DOIS PONTOS ZERADOS PARA MANTER A LINHA ATIVA NA BASE
-    let displayData = [...chartData];
-    if (displayData.length === 0) {
-        displayData = [0, 0];
-    } else if (displayData.length === 1) {
-        displayData.push(displayData[0]);
-    }
-
-    // Criar o gradiente azul neon para preenchimento abaixo da linha
-    let gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
-    gradient.addColorStop(0, "rgba(0, 240, 255, 0.4)");
-    gradient.addColorStop(1, "rgba(0, 240, 255, 0)");
-
-    ctx.beginPath();
-    const maxVal = Math.max(...displayData, 10); 
-    
-    // Mapear pontos na tela
-    for (let i = 0; i < displayData.length; i++) {
-        const x = (i / (displayData.length - 1)) * (canvas.width - padding * 2) + padding;
-        const y = canvas.height - ((displayData[i] / maxVal) * (canvas.height - padding * 2) + padding);
-
-        if (i === 0) {
-            ctx.moveTo(x, y);
-        } else {
-            ctx.lineTo(x, y);
+        for (let i = 0; i < dlPoints.length; i++) {
+            const x = (i / (dlPoints.length - 1)) * (canvas.width - padding * 2) + padding;
+            const y = canvas.height - ((dlPoints[i] / maxVal) * (canvas.height - padding * 2) + padding);
+            if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
         }
+        ctx.strokeStyle = "#00f0ff"; 
+        ctx.lineWidth = 4;
+        ctx.stroke();
+
+        // Gradiente do Download
+        let dlGradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+        dlGradient.addColorStop(0, "rgba(0, 240, 255, 0.15)");
+        dlGradient.addColorStop(1, "rgba(0, 240, 255, 0)");
+        ctx.lineTo((canvas.width - padding), canvas.height - padding);
+        ctx.lineTo(padding, canvas.height - padding);
+        ctx.fillStyle = dlGradient;
+        ctx.fill();
     }
 
-    // Configuração e renderização da Linha Neon Ciano Viva Em Cima de Tudo
-    ctx.strokeStyle = "#00f0ff"; 
-    ctx.lineWidth = 5; // Linha bem grossa para não sumir no monitor
-    ctx.stroke();
+    // --- 2. DESENHAR LINHA DE UPLOAD (ROSA/MAGENTA NEON) ---
+    if (uploadData.length > 0) {
+        let ulPoints = [...uploadData];
+        if (ulPoints.length === 1) ulPoints.push(ulPoints[0]);
 
-    // Fechar área do gradiente
-    ctx.lineTo((canvas.width - padding) , canvas.height - padding);
-    ctx.lineTo(padding, canvas.height - padding);
-    ctx.fillStyle = gradient;
-    ctx.fill();
+        // Linha do Upload
+        ctx.beginPath();
+        for (let i = 0; i < ulPoints.length; i++) {
+            const x = (i / (ulPoints.length - 1)) * (canvas.width - padding * 2) + padding;
+            const y = canvas.height - ((ulPoints[i] / maxVal) * (canvas.height - padding * 2) + padding);
+            if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+        }
+        ctx.strokeStyle = "#ff007f"; // Rosa choque/Magenta neon super contrastante
+        ctx.lineWidth = 4;
+        ctx.stroke();
 
-    // Loop contínuo de renderização por quadro de animação
+        // Gradiente do Upload
+        let ulGradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+        ulGradient.addColorStop(0, "rgba(255, 0, 127, 0.15)");
+        ulGradient.addColorStop(1, "rgba(255, 0, 127, 0)");
+        ctx.lineTo((canvas.width - padding), canvas.height - padding);
+        ctx.lineTo(padding, canvas.height - padding);
+        ctx.fillStyle = ulGradient;
+        ctx.fill();
+    }
+
     animationFrameId = requestAnimationFrame(drawChart);
 }
 
@@ -93,17 +101,12 @@ async function runPingTest() {
         try {
             await fetch(`${API}/ping`, { cache: 'no-store' });
             pings.push(performance.now() - start);
-        } catch (e) {
-            console.error("Erro no ping", e);
-        }
+        } catch (e) { console.error(e); }
         await new Promise(r => setTimeout(r, 200));
     }
-
     const ping = pings.reduce((a, b) => a + b, 0) / pings.length;
     let jitter = 0;
-    for (let i = 1; i < pings.length; i++) {
-        jitter += Math.abs(pings[i] - pings[i - 1]);
-    }
+    for (let i = 1; i < pings.length; i++) jitter += Math.abs(pings[i] - pings[i - 1]);
     jitter = jitter / (pings.length - 1);
 
     pingEl.innerText = `${ping.toFixed(1)} ms`;
@@ -112,7 +115,7 @@ async function runPingTest() {
 
 // --- TESTE DE DOWNLOAD ---
 async function runDownloadTest() {
-    chartData = []; 
+    downloadData = []; // Limpa apenas o download
     if (!animationFrameId) drawChart();
 
     const startTime = performance.now();
@@ -132,23 +135,21 @@ async function runDownloadTest() {
                 const currentMbps = ((loadedBytes * 8) / 1000000) / duration;
                 speedEl.innerText = currentMbps.toFixed(2);
                 downloadEl.innerText = `${currentMbps.toFixed(2)} Mbps`;
-                chartData.push(currentMbps); 
-                console.log("Pontos do gráfico:", chartData); // LINHA PARA TESTE
+                downloadData.push(currentMbps); // Alimenta a linha azul
             }
         }
-    } catch (e) {
-        console.error("Erro no download", e);
-    }
+    } catch (e) { console.error(e); }
 }
 
-// --- TESTE DE UPLOAD (EM RAJADAS DE BLOCOS SEGUROS) ---
+// --- TESTE DE UPLOAD ---
 async function runUploadTest() {
-    // Blocos leves de 1MB evitam o estouro de timeout do servidor gratuito
+    uploadData = []; // Limpa apenas o upload para começar do zero no gráfico
+    
     const blobSize = 1 * 1024 * 1024; 
     const blobData = new Blob([new Uint8Array(blobSize)]);
     
     let totalBytesUploaded = 0;
-    const testDuration = 5000; // Limite fixo de 5 segundos
+    const testDuration = 5000; 
     const startTime = performance.now();
 
     while (performance.now() - startTime < testDuration) {
@@ -165,23 +166,22 @@ async function runUploadTest() {
 
             speedEl.innerText = currentMbps.toFixed(2);
             uploadEl.innerText = `${currentMbps.toFixed(2)} Mbps`;
-            chartData.push(currentMbps); 
+            uploadData.push(currentMbps); // Alimenta a linha rosa ao vivo!
 
         } catch (e) {
-            console.error("Erro no envio de bloco de upload", e);
+            console.error(e);
             break; 
         }
     }
-    
-    cancelAnimationFrame(animationFrameId);
-    animationFrameId = null;
 }
 
-// --- CONTROLE DOS TESTES ---
+// --- GATILHO DO BOTÃO ---
 startBtn.addEventListener("click", async () => {
     startBtn.disabled = true;
     startBtn.innerText = "Testando...";
     
+    downloadData = [];
+    uploadData = [];
     uploadEl.innerText = "--";
     downloadEl.innerText = "--";
     speedEl.innerText = "0.00";
@@ -189,10 +189,13 @@ startBtn.addEventListener("click", async () => {
     await runPingTest();
     await runDownloadTest();
     
-    await new Promise(r => setTimeout(r, 1000)); 
+    await new Promise(r => setTimeout(r, 800)); 
     
     await runUploadTest();
 
     startBtn.disabled = false;
     startBtn.innerText = "Iniciar Teste";
+    
+    cancelAnimationFrame(animationFrameId);
+    animationFrameId = null;
 });
