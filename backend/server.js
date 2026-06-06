@@ -11,7 +11,7 @@ app.use(cors({
     allowedHeaders: ['Content-Type', 'Authorization']
 }));
 // Adicione também uma resposta rápida para requisições OPTIONS (Preflight)
-app.options('*', cors());
+app.options(/(.*)/, cors());
 // 2. Servir os arquivos do Frontend
 app.use(express.static('frontend'));
 
