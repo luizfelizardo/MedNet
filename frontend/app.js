@@ -5,7 +5,10 @@ const jitterEl = document.getElementById("jitter");
 const downloadEl = document.getElementById("download");
 const uploadEl = document.getElementById("upload");
 const startBtn = document.getElementById("startBtn");
-const modal = document.getElementById("resultModal");
+
+// Seleção dos novos elementos da sobreposição
+const overlay = document.getElementById("resultOverlay");
+const closeOverlayBtn = document.getElementById("closeOverlayBtn");
 
 const canvas = document.getElementById("chart");
 const ctx = canvas.getContext("2d");
@@ -37,7 +40,7 @@ function drawChart() {
 
     const maxVal = Math.max(...downloadData, ...uploadData, 10);
 
-    // Linha de Download (Azul Ciano)
+    // Linha de Download (Azul)
     if (downloadData.length > 0) {
         let dlPoints = [...downloadData];
         if (dlPoints.length === 1) dlPoints.push(dlPoints[0]);
@@ -61,7 +64,7 @@ function drawChart() {
         ctx.fill();
     }
 
-    // Linha de Upload (Rosa Magenta)
+    // Linha de Upload (Rosa)
     if (uploadData.length > 0) {
         let ulPoints = [...uploadData];
         if (ulPoints.length === 1) ulPoints.push(ulPoints[0]);
@@ -136,7 +139,7 @@ async function runDownloadTest() {
     } catch (e) { console.error(e); }
 }
 
-// --- TESTE DE UPLOAD PARALELO (MULTI-STREAM) ---
+// --- TESTE DE UPLOAD PARALELO ---
 async function runUploadTest() {
     uploadData = [];
     const blobSize = 1 * 1024 * 1024; 
@@ -170,13 +173,12 @@ async function runUploadTest() {
         }
     }
 
-    // Dispara 3 conexões simultâneas para furar a latência internacional
     await Promise.all([uploadWorker(), uploadWorker(), uploadWorker()]);
 }
 
 // --- GATILHO PRINCIPAL ---
 startBtn.addEventListener("click", async () => {
-    modal.classList.add("hidden"); // Esconde o resumo anterior
+    overlay.classList.add("hidden"); // Garante que a tela de resultado está fechada
 
     startBtn.disabled = true;
     startBtn.innerText = "Testando...";
@@ -190,7 +192,6 @@ startBtn.addEventListener("click", async () => {
     await runPingTest();
     await runDownloadTest();
     
-    // Suavização: Limpa o visor central e faz uma pausa confortável
     speedEl.innerText = "0.00";
     startBtn.innerText = "Preparando Upload...";
     await new Promise(r => setTimeout(r, 1200)); 
@@ -198,14 +199,32 @@ startBtn.addEventListener("click", async () => {
     startBtn.innerText = "Testando Upload...";
     await runUploadTest();
 
-    // Injeta os dados finais capturados no Painel de Resumo
+    // Injeta os dados consolidados na tela de resultado sobreposta
     document.getElementById("resDownload").innerText = downloadEl.innerText;
     document.getElementById("resUpload").innerText = uploadEl.innerText;
-    modal.classList.remove("hidden"); // Exibe o Resumo com animação
+    document.getElementById("resPing").innerText = pingEl.innerText;
+    document.getElementById("resJitter").innerText = jitterEl.innerText;
+    
+    // Revela a tela cheia com efeito blur por cima de tudo
+    overlay.classList.remove("hidden");
 
     startBtn.disabled = false;
     startBtn.innerText = "Iniciar Teste";
     
     cancelAnimationFrame(animationFrameId);
     animationFrameId = null;
+});
+
+// Botão interno da tela de resultado para fechar o overlay e limpar o painel
+closeOverlayBtn.addEventListener("click", () => {
+    overlay.classList.add("hidden");
+    speedEl.innerText = "0.00";
+    pingEl.innerText = "--";
+    jitterEl.innerText = "--";
+    downloadEl.innerText = "--";
+    uploadEl.innerText = "--";
+    
+    // Limpa o canvas voltando para o estado inicial escuro
+    ctx.fillStyle = "#0f172a"; 
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
 });

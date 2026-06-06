@@ -11,26 +11,6 @@
 <div class="container">
     <h1>🚀 MedNET Deluxe</h1>
 
-    <div id="resultModal" class="result-modal hidden">
-        <div class="result-header">🎉 TESTE CONCLUÍDO</div>
-        <div class="result-grid">
-            <div class="result-card dl">
-                <span class="arrow">↓</span>
-                <div class="result-info">
-                    <label>DOWNLOAD RECORDED</label>
-                    <span id="resDownload">0.00 Mbps</span>
-                </div>
-            </div>
-            <div class="result-card ul">
-                <span class="arrow">↑</span>
-                <div class="result-info">
-                    <label>UPLOAD RECORDED</label>
-                    <span id="resUpload">0.00 Mbps</span>
-                </div>
-            </div>
-        </div>
-    </div>
-
     <div class="speed-box">
         <div class="speed-value" id="speed">0.00</div>
         <div class="speed-unit">Mbps</div>
@@ -60,6 +40,40 @@
     </div>
 
     <button id="startBtn">Iniciar Teste</button>
+
+    <div id="resultOverlay" class="result-overlay hidden">
+        <div class="result-modal">
+            <div class="result-header">🎉 TESTE CONCLUÍDO</div>
+            
+            <div class="result-grid">
+                <div class="result-card dl">
+                    <span class="arrow">↓</span>
+                    <div class="result-info">
+                        <label>DOWNLOAD RECORDED</label>
+                        <span id="resDownload">0.00 Mbps</span>
+                    </div>
+                </div>
+                <div class="result-card ul">
+                    <span class="arrow">↑</span>
+                    <div class="result-info">
+                        <label>UPLOAD RECORDED</label>
+                        <span id="resUpload">0.00 Mbps</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="extra-stats">
+                <div class="mini-card">
+                    <span>Ping:</span> <strong id="resPing">--</strong>
+                </div>
+                <div class="mini-card">
+                    <span>Jitter:</span> <strong id="resJitter">--</strong>
+                </div>
+            </div>
+
+            <button id="closeOverlayBtn" class="close-btn">Refazer Teste</button>
+        </div>
+    </div>
 </div>
 
 <script src="app.js"></script>
