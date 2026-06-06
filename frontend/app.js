@@ -20,6 +20,51 @@ let downloadData = [];
 let uploadData = [];
 let animationFrameId = null;
 
+// Variáveis de controle do motor de fluidez (LERP)
+let targetSpeed = 0;   // Velocidade real vinda da rede
+let currentSpeed = 0;  // Velocidade suavizada sendo exibida na tela
+let isTesting = false;
+let activeTestType = null; // 'download' ou 'upload'
+let tickerIntervalId = null;
+
+// --- MOTOR DE SUAVIZAÇÃO EM TEMPO REAL (60 FPS) ---
+function startInterpolationTicker() {
+    if (tickerIntervalId) clearInterval(tickerIntervalId);
+    
+    // Roda a cada 16ms (Equivalente a 60 frames por segundo)
+    tickerIntervalId = setInterval(() => {
+        if (!isTesting) return;
+
+        // Fator de suavização (0.1 = Ultra fluido/Deslize suave, 0.3 = Mais responsivo)
+        const interpolationFactor = 0.12; 
+        
+        // Aplicação matemática do LERP: De forma suave, aproxima a velocidade atual da real
+        currentSpeed += (targetSpeed - currentSpeed) * interpolationFactor;
+        
+        // Evita flutuações residuais perto de zero
+        if (currentSpeed < 0.05 && targetSpeed === 0) currentSpeed = 0;
+
+        // Atualiza o painel central com fluidez de milissegundos
+        speedEl.innerText = currentSpeed.toFixed(2);
+
+        // Alimenta o array do gráfico com a velocidade perfeitamente suavizada
+        if (activeTestType === "download") {
+            downloadData.push(currentSpeed);
+        } else if (activeTestType === "upload") {
+            uploadData.push(currentSpeed);
+        }
+    }, 16);
+}
+
+function stopInterpolationTicker() {
+    if (tickerIntervalId) {
+        clearInterval(tickerIntervalId);
+        tickerIntervalId = null;
+    }
+    targetSpeed = 0;
+    currentSpeed = 0;
+}
+
 // --- FUNÇÃO DO GRÁFICO DUAL-LINE ---
 function drawChart() {
     ctx.fillStyle = "#0f172a"; 
@@ -39,7 +84,7 @@ function drawChart() {
 
     const maxVal = Math.max(...downloadData, ...uploadData, 10);
 
-    // Linha de Download (Azul)
+    // Linha de Download (Azul Ciano)
     if (downloadData.length > 0) {
         let dlPoints = [...downloadData];
         if (dlPoints.length === 1) dlPoints.push(dlPoints[0]);
@@ -63,7 +108,7 @@ function drawChart() {
         ctx.fill();
     }
 
-    // Linha de Upload (Rosa)
+    // Linha de Upload (Rosa Magenta)
     if (uploadData.length > 0) {
         let ulPoints = [...uploadData];
         if (ulPoints.length === 1) ulPoints.push(ulPoints[0]);
@@ -110,9 +155,13 @@ async function runPingTest() {
     jitterEl.innerText = `${jitter.toFixed(1)} ms`;
 }
 
-// --- TESTE DE DOWNLOAD ---
+// --- TESTE DE DOWNLOAD OTIMIZADO ---
 async function runDownloadTest() {
     downloadData = [];
+    activeTestType = "download";
+    isTesting = true;
+    
+    startInterpolationTicker();
     if (!animationFrameId) drawChart();
 
     const startTime = performance.now();
@@ -129,28 +178,31 @@ async function runDownloadTest() {
             const duration = (performance.now() - startTime) / 1000; 
             
             if (duration > 0) {
-                const currentMbps = ((loadedBytes * 8) / 1000000) / duration;
-                speedEl.innerText = currentMbps.toFixed(2);
-                downloadEl.innerText = `${currentMbps.toFixed(2)} Mbps`;
-                downloadData.push(currentMbps);
+                // Modifica apenas o alvo real de velocidade (O Ticker suaviza o resto a 60 FPS)
+                targetSpeed = ((loadedBytes * 8) / 1000000) / duration;
+                downloadEl.innerText = `${targetSpeed.toFixed(2)} Mbps`;
             }
         }
     } catch (e) { console.error(e); }
+    
+    isTesting = false;
+    stopInterpolationTicker();
 }
 
-// --- TESTE DE UPLOAD PARALELO SUAVIZADO ---
+// --- TESTE DE UPLOAD MULTI-STREAM OTIMIZADO ---
 async function runUploadTest() {
     uploadData = [];
+    activeTestType = "upload";
+    isTesting = true;
+    
+    startInterpolationTicker();
+    
     const blobSize = 1 * 1024 * 1024; 
     const blobData = new Blob([new Uint8Array(blobSize)]);
     
     let totalBytesUploaded = 0;
     const testDuration = 5000; 
     const startTime = performance.now();
-    
-    // Histórico para calcular a média móvel (Suavização de linha)
-    let smoothHistory = [];
-    const maxHistorySamples = 8; 
 
     async function uploadWorker() {
         while (performance.now() - startTime < testDuration) {
@@ -163,19 +215,10 @@ async function runUploadTest() {
                 
                 totalBytesUploaded += blobSize;
                 const totalDuration = (performance.now() - startTime) / 1000;
-                const rawMbps = ((totalBytesUploaded * 8) / 1000000) / totalDuration;
-
-                // Armazena no histórico para amortecer oscilações bruscas
-                smoothHistory.push(rawMbps);
-                if (smoothHistory.length > maxHistorySamples) smoothHistory.shift();
-
-                // Calcula a média móvel atualizada
-                const smoothMbps = smoothHistory.reduce((a, b) => a + b, 0) / smoothHistory.length;
-
-                // Atualiza a tela e o gráfico com os dados fluidos
-                speedEl.innerText = smoothMbps.toFixed(2);
-                uploadEl.innerText = `${smoothMbps.toFixed(2)} Mbps`;
-                uploadData.push(smoothMbps);
+                
+                // Modifica apenas o alvo real de velocidade (O Ticker suaviza a 60 FPS)
+                targetSpeed = ((totalBytesUploaded * 8) / 1000000) / totalDuration;
+                uploadEl.innerText = `${targetSpeed.toFixed(2)} Mbps`;
 
             } catch (e) {
                 console.error(e);
@@ -185,9 +228,12 @@ async function runUploadTest() {
     }
 
     await Promise.all([uploadWorker(), uploadWorker(), uploadWorker()]);
+    
+    isTesting = false;
+    stopInterpolationTicker();
 }
 
-// --- GATILHO PRINCIPAL (COM TRANSIÇÃO ESTILOSA) ---
+// --- GATILHO PRINCIPAL COM CONTAGEM REGRESSIVA VISUAL ---
 startBtn.addEventListener("click", async () => {
     overlay.classList.add("hidden"); 
 
@@ -200,30 +246,24 @@ startBtn.addEventListener("click", async () => {
     downloadEl.innerText = "--";
     speedEl.innerText = "0.00";
 
-    // 1. Executa o teste de Latência
     await runPingTest();
     
-    // 2. Executa o teste de Download
     startBtn.innerText = "Testando Download...";
     await runDownloadTest();
     
-    // 🧠 TRANSIÇÃO BACANA: Zera o medidor e faz contagem regressiva animada no botão
+    // Transição fluida e elegante pós-download
     speedEl.innerText = "0.00";
-    
     startBtn.innerText = "Próximo teste em 3...";
     await new Promise(r => setTimeout(r, 500));
-    
     startBtn.innerText = "Próximo teste em 2...";
     await new Promise(r => setTimeout(r, 500));
-    
     startBtn.innerText = "Próximo teste em 1...";
     await new Promise(r => setTimeout(r, 500));
     
-    // 3. Executa o teste de Upload Suavizado
     startBtn.innerText = "Testando Upload...";
     await runUploadTest();
 
-    // Consolida resultados finais na tela sobreposta
+    // Fixa os valores coletados no overlay final
     document.getElementById("resDownload").innerText = downloadEl.innerText;
     document.getElementById("resUpload").innerText = uploadEl.innerText;
     document.getElementById("resPing").innerText = pingEl.innerText;
@@ -238,7 +278,7 @@ startBtn.addEventListener("click", async () => {
     animationFrameId = null;
 });
 
-// Reset do Painel
+// Reset do Sistema
 closeOverlayBtn.addEventListener("click", () => {
     overlay.classList.add("hidden");
     speedEl.innerText = "0.00";
