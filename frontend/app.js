@@ -4,7 +4,6 @@ const pingEl = document.getElementById("ping");
 const jitterEl = document.getElementById("jitter");
 const downloadEl = document.getElementById("download");
 const uploadEl = document.getElementById("upload");
-
 const startBtn = document.getElementById("startBtn");
 
 const canvas = document.getElementById("chart");
@@ -14,205 +13,179 @@ canvas.width = 800;
 canvas.height = 250;
 
 let chartData = [];
+let animationFrameId = null;
 
-function drawChart(){
+// --- FUNÇÃO DO GRÁFICO DINÂMICO ---
+function drawChart() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    
+    if (chartData.length === 0) return;
 
-    ctx.clearRect(
-        0,
-        0,
-        canvas.width,
-        canvas.height
-    );
+    // Criar o gradiente azul para preenchimento abaixo da linha
+    let gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+    gradient.addColorStop(0, "rgba(0, 212, 255, 0.3)");
+    gradient.addColorStop(1, "rgba(0, 212, 255, 0)");
+
+    ctx.beginPath();
+    
+    // Descobrir o maior valor para escalar o gráfico dinamicamente
+    const maxVal = Math.max(...chartData, 10); 
+    const padding = 40;
+    
+    // Desenhar a linha do gráfico
+    for (let i = 0; i < chartData.length; i++) {
+        // Distribui os pontos horizontalmente ao longo do canvas
+        const x = (i / (chartData.length - 1 || 1)) * (canvas.width - padding * 2) + padding;
+        // Calcula a altura invertida (já que o Y do canvas começa no topo)
+        const y = canvas.height - ((chartData[i] / maxVal) * (canvas.height - padding * 2) + padding);
+
+        if (i === 0) {
+            ctx.moveTo(x, y);
+        } else {
+            ctx.lineTo(x, y);
+        }
+    }
 
     ctx.strokeStyle = "#00d4ff";
     ctx.lineWidth = 3;
-
-    ctx.beginPath();
-
-    chartData.forEach((v,i)=>{
-
-        const x =
-        (i/(chartData.length-1||1))
-        * canvas.width;
-
-        const y =
-        canvas.height
-        -
-        (Math.min(v,1000)/1000)
-        * canvas.height;
-
-        if(i===0)
-            ctx.moveTo(x,y);
-        else
-            ctx.lineTo(x,y);
-
-    });
-
+    ctx.shadowBlur = 10;
+    ctx.shadowColor = "#00d4ff";
     ctx.stroke();
+    ctx.shadowBlur = 0; // Reseta a sombra para não borrar o resto
+
+    // Fecha a área para pintar o gradiente por baixo
+    const firstX = padding;
+    const lastX = (canvas.width - padding * 2) + padding;
+    ctx.lineTo(lastX, canvas.height);
+    ctx.lineTo(firstX, canvas.height);
+    ctx.fillStyle = gradient;
+    ctx.fill();
+
+    // Loop de animação contínua
+    animationFrameId = requestAnimationFrame(drawChart);
 }
 
-async function getPing(){
-
-    const samples=[];
-
-    for(let i=0;i<8;i++){
-
-        const start =
-        performance.now();
-
-        await fetch(
-            API+"/ping?"+Date.now()
-        );
-
-        samples.push(
-            performance.now()-start
-        );
-    }
-
-    return samples;
-}
-
-function getJitter(samples){
-
-    let total = 0;
-
-    for(let i=1;i<samples.length;i++){
-
-        total += Math.abs(
-            samples[i]
-            -
-            samples[i-1]
-        );
-    }
-
-    return total/(samples.length-1);
-}
-
-async function testDownload(){
-
-    chartData=[];
-
-    const start =
-    performance.now();
-
-    const response =
-    await fetch(
-        API+"/download?"+Date.now()
-    );
-
-    const reader =
-    response.body.getReader();
-
-    let bytes = 0;
-
-    while(true){
-
-        const {
-            done,
-            value
-        } = await reader.read();
-
-        if(done) break;
-
-        bytes += value.length;
-
-        const elapsed =
-        (performance.now()-start)
-        /1000;
-
-        const mbps =
-        ((bytes*8)/elapsed)
-        /1000000;
-
-        speedEl.innerText =
-        mbps.toFixed(2);
-
-        chartData.push(mbps);
-
-        if(chartData.length>60){
-            chartData.shift();
+// --- TESTE DE PING E JITTER ---
+async function runPingTest() {
+    let pings = [];
+    for (let i = 0; i < 5; i++) {
+        const start = performance.now();
+        try {
+            await fetch(`${API}/ping`, { cache: 'no-store' });
+            pings.push(performance.now() - start);
+        } catch (e) {
+            console.error("Erro no ping", e);
         }
-
-        drawChart();
+        await new Promise(r => setTimeout(r, 200));
     }
 
-    return (
-        (bytes*8)
-        /
-        ((performance.now()-start)/1000)
-        /
-        1000000
-    );
+    const ping = pings.reduce((a, b) => a + b, 0) / pings.length;
+    let jitter = 0;
+    for (let i = 1; i < pings.length; i++) {
+        jitter += Math.abs(pings[i] - pings[i - 1]);
+    }
+    jitter = jitter / (pings.length - 1);
+
+    pingEl.innerText = `${ping.toFixed(1)} ms`;
+    jitterEl.innerText = `${jitter.toFixed(1)} ms`;
 }
 
-async function testUpload(){
-    // Cria o array de 10MB preenchido com zeros (mais rápido e seguro)
-    const data = new Uint8Array(10 * 1024 * 1024);
+// --- TESTE DE DOWNLOAD ---
+async function runDownloadTest() {
+    chartData = []; // Limpa o gráfico para o novo teste
+    if (!animationFrameId) drawChart();
+
+    const startTime = performance.now();
+    try {
+        const response = await fetch(`${API}/download`, { cache: 'no-store' });
+        const reader = response.body.getReader();
+        let loadedBytes = 0;
+
+        while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            
+            loadedBytes += value.length;
+            const duration = (performance.now() - startTime) / 1000; // segundos
+            
+            if (duration > 0) {
+                // Cálculo de Mbps: (Bytes * 8) / bits em 1 Megabit / segundos
+                const currentMbps = ((loadedBytes * 8) / 1000000) / duration;
+                
+                speedEl.innerText = currentMbps.toFixed(2);
+                downloadEl.innerText = `${currentMbps.toFixed(2)} Mbps`;
+                
+                // Adiciona o ponto ao gráfico para fazê-lo oscilar dinamicamente
+                chartData.push(currentMbps);
+            }
+        }
+    } catch (e) {
+        console.error("Erro no download", e);
+    }
+}
+
+// --- TESTE DE UPLOAD (EM RAJADAS DE BLOCOS) ---
+async function runUploadTest() {
+    // Gerar um bloco leve de dados binários (1 Megabyte fixo)
+    const blobSize = 1 * 1024 * 1024; 
+    const blobData = new Blob([new Uint8Array(blobSize)]);
     
-    // Opcional: Se quiser preencher com dados variados sem estourar o limite:
-    for (let i = 0; i < data.length; i += 65536) {
-        const chunk = data.subarray(i, Math.min(i + 65536, data.length));
-        crypto.getRandomValues(chunk);
-    }
+    let totalBytesUploaded = 0;
+    const testDuration = 5000; // 5 segundos de teste limite
+    const startTime = performance.now();
 
-    const start = performance.now();
+    while (performance.now() - startTime < testDuration) {
+        const chunkStart = performance.now();
+        
+        try {
+            // Envia o bloco de 1MB de forma direta
+            await fetch(`${API}/upload`, {
+                method: "POST",
+                body: blobData,
+                headers: { "Content-Type": "application/octet-stream" }
+            });
 
-    await fetch(
-        API + "/upload",
-        {
-            method: "POST",
-            body: data
+            const chunkEnd = performance.now();
+            totalBytesUploaded += blobSize;
+
+            const totalDuration = (chunkEnd - startTime) / 1000;
+            const currentMbps = ((totalBytesUploaded * 8) / 1000000) / totalDuration;
+
+            // Atualiza os elementos visuais na hora
+            speedEl.innerText = currentMbps.toFixed(2);
+            uploadEl.innerText = `${currentMbps.toFixed(2)} Mbps`;
+            
+            // Alimenta o gráfico durante o upload também!
+            chartData.push(currentMbps);
+
+        } catch (e) {
+            console.error("Erro no envio de bloco de upload", e);
+            break; // Para o laço se o servidor falhar
         }
-    );
-
-    return (
-        (data.length * 8) /
-        ((performance.now() - start) / 1000) /
-        1000000
-    );
+    }
+    
+    // Para a animação do gráfico ao finalizar tudo
+    cancelAnimationFrame(animationFrameId);
+    animationFrameId = null;
 }
 
-startBtn.addEventListener(
-"click",
-async()=>{
+// --- GATILHO DO BOTÃO ---
+startBtn.addEventListener("click", async () => {
+    startBtn.disabled = true;
+    startBtn.innerText = "Testando...";
+    
+    uploadEl.innerText = "--";
+    downloadEl.innerText = "--";
+    speedEl.innerText = "0.00";
 
-    startBtn.disabled=true;
+    await runPingTest();
+    await runDownloadTest();
+    
+    // Intervalo de descanso antes do upload para aliviar o Render gratuito
+    await new Promise(r => setTimeout(r, 1000)); 
+    
+    await runUploadTest();
 
-    speedEl.innerText="0";
-
-    const pings =
-    await getPing();
-
-    const ping =
-    pings.reduce((a,b)=>a+b,0)
-    / pings.length;
-
-    const jitter =
-    getJitter(pings);
-
-    pingEl.innerText =
-    ping.toFixed(1)+" ms";
-
-    jitterEl.innerText =
-    jitter.toFixed(1)+" ms";
-
-    const download =
-    await testDownload();
-
-    downloadEl.innerText =
-    download.toFixed(2)
-    +" Mbps";
-
-    const upload =
-    await testUpload();
-
-    uploadEl.innerText =
-    upload.toFixed(2)
-    +" Mbps";
-
-    speedEl.innerText =
-    download.toFixed(2);
-
-    startBtn.disabled=false;
-
+    startBtn.disabled = false;
+    startBtn.innerText = "Iniciar Teste";
 });
