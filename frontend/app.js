@@ -9,21 +9,23 @@ const startBtn = document.getElementById("startBtn");
 const canvas = document.getElementById("chart");
 const ctx = canvas.getContext("2d");
 
+// Forçar dimensões físicas de renderização do canvas
 canvas.width = 800;
 canvas.height = 250;
+ctx.imageSmoothingEnabled = true;
 
 let chartData = [];
 let animationFrameId = null;
 
 // --- FUNÇÃO DO GRÁFICO DINÂMICO GRADIENTE COM GRADE ---
 function drawChart() {
-    // Fundo escuro semi-transparente para dar contraste às linhas
-    ctx.fillStyle = "rgba(15, 23, 42, 0.8)"; 
+    // Fundo sólido escuro para total contraste contra o CSS externo
+    ctx.fillStyle = "#0f172a"; 
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     
     const padding = 40;
     
-    // Desenhar Linhas de Grade de Fundo (Estilo Painel Profissional)
+    // Desenhar Linhas de Grade de Fundo (Visual de Osciloscópio)
     ctx.strokeStyle = "rgba(255, 255, 255, 0.05)";
     ctx.lineWidth = 1;
     for (let i = padding; i < canvas.width - padding; i += 100) {
@@ -43,13 +45,13 @@ function drawChart() {
 
     // Criar o gradiente azul neon para preenchimento abaixo da linha
     let gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
-    gradient.addColorStop(0, "rgba(0, 240, 255, 0.3)");
+    gradient.addColorStop(0, "rgba(0, 240, 255, 0.35)");
     gradient.addColorStop(1, "rgba(0, 240, 255, 0)");
 
     ctx.beginPath();
     const maxVal = Math.max(...chartData, 10); 
     
-    // Mapear e desenhar a linha do gráfico
+    // Mapear pontos no espaço exato de 800x250
     for (let i = 0; i < chartData.length; i++) {
         const x = (i / (chartData.length - 1 || 1)) * (canvas.width - padding * 2) + padding;
         const y = canvas.height - ((chartData[i] / maxVal) * (canvas.height - padding * 2) + padding);
@@ -61,12 +63,12 @@ function drawChart() {
         }
     }
 
-    // Configuração da Linha Neon Ciano Viva
+    // Configuração e renderização da Linha Neon Ciano Viva
     ctx.strokeStyle = "#00f0ff"; 
     ctx.lineWidth = 4;           
     ctx.stroke();
 
-    // Pintar o preenchimento por baixo da linha
+    // Fechar área do gradiente
     const firstX = padding;
     const lastX = (canvas.width - padding * 2) + padding;
     ctx.lineTo(lastX, canvas.height - padding);
@@ -74,7 +76,7 @@ function drawChart() {
     ctx.fillStyle = gradient;
     ctx.fill();
 
-    // Loop contínuo de renderização por quadro
+    // Loop contínuo de renderização por quadro de animação
     animationFrameId = requestAnimationFrame(drawChart);
 }
 
@@ -125,7 +127,7 @@ async function runDownloadTest() {
                 const currentMbps = ((loadedBytes * 8) / 1000000) / duration;
                 speedEl.innerText = currentMbps.toFixed(2);
                 downloadEl.innerText = `${currentMbps.toFixed(2)} Mbps`;
-                chartData.push(currentMbps); // Adiciona ao gráfico instantaneamente
+                chartData.push(currentMbps); 
             }
         }
     } catch (e) {
@@ -135,12 +137,12 @@ async function runDownloadTest() {
 
 // --- TESTE DE UPLOAD (EM RAJADAS DE BLOCOS SEGUROS) ---
 async function runUploadTest() {
-    // Envia blocos de 1 Megabyte repetidamente por 5 segundos
+    // Blocos leves de 1MB evitam o estouro de timeout do servidor gratuito
     const blobSize = 1 * 1024 * 1024; 
     const blobData = new Blob([new Uint8Array(blobSize)]);
     
     let totalBytesUploaded = 0;
-    const testDuration = 5000; 
+    const testDuration = 5000; // Limite fixo de 5 segundos
     const startTime = performance.now();
 
     while (performance.now() - startTime < testDuration) {
@@ -157,7 +159,7 @@ async function runUploadTest() {
 
             speedEl.innerText = currentMbps.toFixed(2);
             uploadEl.innerText = `${currentMbps.toFixed(2)} Mbps`;
-            chartData.push(currentMbps); // Alimenta o gráfico no upload também
+            chartData.push(currentMbps); 
 
         } catch (e) {
             console.error("Erro no envio de bloco de upload", e);
@@ -169,7 +171,7 @@ async function runUploadTest() {
     animationFrameId = null;
 }
 
-// --- GATILHO ---
+// --- CONTROLE DOS TESTES ---
 startBtn.addEventListener("click", async () => {
     startBtn.disabled = true;
     startBtn.innerText = "Testando...";
@@ -181,7 +183,7 @@ startBtn.addEventListener("click", async () => {
     await runPingTest();
     await runDownloadTest();
     
-    await new Promise(r => setTimeout(r, 1000)); // Pequena pausa de estabilização
+    await new Promise(r => setTimeout(r, 1000)); 
     
     await runUploadTest();
 

@@ -4,20 +4,20 @@ const path = require("path");
 
 const app = express();
 
-// 1. Configurações Globais de Segurança e Dados (Sempre no topo!)
+// 1. Configurações Globais do CORS (Sempre no topo)
 app.use(cors({
     origin: '*', 
     methods: ['GET', 'POST', 'OPTIONS'], 
     allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
-// Resposta rápida para requisições OPTIONS (Preflight de segurança) usando Regex aceito pelo Express
+// Resposta rápida para Preflight (OPTIONS) usando Expressão Regular compatível com Express atual
 app.options(/(.*)/, cors());
 
-// Permitir receber arquivos binários brutos no corpo da requisição (usado no Upload)
+// Suporte para streaming e leitura de buffers binários puros de até 50MB
 app.use(express.raw({ type: "application/octet-stream", limit: "50mb" }));
 
-// 2. Rotas da API
+// 2. Definição das Rotas Operacionais
 app.get("/ping", (req, res) => {
     res.json({ pong: true });
 });
@@ -33,7 +33,7 @@ app.post("/upload", (req, res) => {
     res.json({ received: bytes });
 });
 
-// 3. Inicialização do Servidor na Porta Certa
+// 3. Inicialização
 const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, () => {
