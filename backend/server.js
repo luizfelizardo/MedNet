@@ -6,20 +6,20 @@ const app = express();
 
 // 1. Configurações Globais de Segurança e Dados (Sempre no topo!)
 app.use(cors({
-    origin: '*', // Permite requisições de qualquer origem (como o Netlify)
-    methods: ['GET', 'POST', 'OPTIONS'], // Libera explicitamente o POST e o Preflight (OPTIONS)
+    origin: '*', 
+    methods: ['GET', 'POST', 'OPTIONS'], 
     allowedHeaders: ['Content-Type', 'Authorization']
 }));
-// Adicione também uma resposta rápida para requisições OPTIONS (Preflight)
-app.options(/(.*)/, cors());
-// 2. Servir os arquivos do Frontend
-app.use(express.static('frontend'));
 
-// 3. Rotas da API
+// Resposta rápida para requisições OPTIONS (Preflight de segurança) usando Regex aceito pelo Express
+app.options(/(.*)/, cors());
+
+// Permitir receber arquivos binários brutos no corpo da requisição (usado no Upload)
+app.use(express.raw({ type: "application/octet-stream", limit: "50mb" }));
+
+// 2. Rotas da API
 app.get("/ping", (req, res) => {
-    res.json({
-        timestamp: Date.now()
-    });
+    res.json({ pong: true });
 });
 
 app.get("/download", (req, res) => {
@@ -30,11 +30,10 @@ app.get("/download", (req, res) => {
 
 app.post("/upload", (req, res) => {
     const bytes = req.body ? req.body.length : 0;
-    res.json({
-        received: bytes
-    });
+    res.json({ received: bytes });
 });
 
+// 3. Inicialização do Servidor na Porta Certa
 const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, () => {
