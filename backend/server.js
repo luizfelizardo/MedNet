@@ -11,13 +11,13 @@ app.use(cors({
     allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
-// Resposta rápida para Preflight (OPTIONS) usando Expressão Regular compatível com Express atual
+// Resposta rápida para Preflight (OPTIONS) compatível com Express atual
 app.options(/(.*)/, cors());
 
-// Suporte para streaming e leitura de buffers binários puros de até 50MB
+// Suporte para buffers binários puros de até 50MB (usado no Upload de blocos)
 app.use(express.raw({ type: "application/octet-stream", limit: "50mb" }));
 
-// 2. Definição das Rotas Operacionais
+// 2. Definição das Rotas
 app.get("/ping", (req, res) => {
     res.json({ pong: true });
 });

@@ -32,6 +32,68 @@ h1 {
     color: #ffffff;
 }
 
+/* --- PAINEL DE RESUMO DE PERFORMANCE --- */
+.result-modal {
+    background: linear-gradient(145deg, #1e293b, #0f172a);
+    border: 2px solid #334155;
+    border-radius: 12px;
+    padding: 18px;
+    margin-bottom: 25px;
+    animation: fadeIn 0.5s ease-in-out forwards;
+}
+
+.result-modal.hidden {
+    display: none !important;
+}
+
+.result-header {
+    font-size: 0.9rem;
+    font-weight: bold;
+    color: #38bdf8;
+    letter-spacing: 2px;
+    margin-bottom: 12px;
+}
+
+.result-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+}
+
+.result-card {
+    display: flex;
+    align-items: center;
+    background: #0b0f19;
+    padding: 12px 20px;
+    border-radius: 10px;
+    border-left: 5px solid #334155;
+    text-align: left;
+}
+
+.result-card.dl { border-left-color: #00f0ff; }
+.result-card.ul { border-left-color: #ff007f; }
+
+.arrow {
+    font-size: 2rem;
+    font-weight: bold;
+    margin-right: 15px;
+}
+.result-card.dl .arrow { color: #00f0ff; }
+.result-card.ul .arrow { color: #ff007f; }
+
+.result-info label {
+    display: block;
+    font-size: 0.75rem;
+    color: #64748b;
+    font-weight: 600;
+}
+
+.result-info span {
+    font-size: 1.6rem;
+    font-weight: bold;
+    color: #ffffff;
+}
+
 /* Painel de Velocidade Atual */
 .speed-box {
     margin-bottom: 30px;
@@ -78,7 +140,7 @@ h1 {
     color: #00d4ff;
 }
 
-/* --- FIX: CONTAINER E CANVAS DO GRÁFICO --- */
+/* Container e Canvas do Gráfico */
 .chart-container {
     width: 100%;
     max-width: 800px;
@@ -92,7 +154,7 @@ h1 {
 #chart {
     display: block;
     width: 100%;
-    height: auto; /* Mantém a proporção de 800x250 definida no HTML */
+    height: auto;
 }
 
 /* Botão de Ação */
@@ -123,12 +185,14 @@ button:disabled {
     box-shadow: none;
 }
 
-/* Responsividade Básica */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Responsividade */
 @media (max-width: 600px) {
-    .stats {
-        grid-template-columns: repeat(2, 1fr);
-    }
-    .speed-value {
-        font-size: 3.5rem;
-    }
+    .stats { grid-template-columns: repeat(2, 1fr); }
+    .result-grid { grid-template-columns: 1fr; }
+    .speed-value { font-size: 3.5rem; }
 }

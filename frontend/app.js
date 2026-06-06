@@ -5,6 +5,7 @@ const jitterEl = document.getElementById("jitter");
 const downloadEl = document.getElementById("download");
 const uploadEl = document.getElementById("upload");
 const startBtn = document.getElementById("startBtn");
+const modal = document.getElementById("resultModal");
 
 const canvas = document.getElementById("chart");
 const ctx = canvas.getContext("2d");
@@ -17,7 +18,7 @@ let downloadData = [];
 let uploadData = [];
 let animationFrameId = null;
 
-// --- FUNÇÃO DO GRÁFICO ---
+// --- FUNÇÃO DO GRÁFICO DUAL-LINE ---
 function drawChart() {
     ctx.fillStyle = "#0f172a"; 
     ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -36,7 +37,7 @@ function drawChart() {
 
     const maxVal = Math.max(...downloadData, ...uploadData, 10);
 
-    // Linha de Download (Azul)
+    // Linha de Download (Azul Ciano)
     if (downloadData.length > 0) {
         let dlPoints = [...downloadData];
         if (dlPoints.length === 1) dlPoints.push(dlPoints[0]);
@@ -60,7 +61,7 @@ function drawChart() {
         ctx.fill();
     }
 
-    // Linha de Upload (Rosa)
+    // Linha de Upload (Rosa Magenta)
     if (uploadData.length > 0) {
         let ulPoints = [...uploadData];
         if (ulPoints.length === 1) ulPoints.push(ulPoints[0]);
@@ -135,17 +136,16 @@ async function runDownloadTest() {
     } catch (e) { console.error(e); }
 }
 
-// --- TESTE DE UPLOAD ACELERADO (PARALELO MULTI-STREAM) ---
+// --- TESTE DE UPLOAD PARALELO (MULTI-STREAM) ---
 async function runUploadTest() {
     uploadData = [];
-    const blobSize = 1 * 1024 * 1024; // 1MB
+    const blobSize = 1 * 1024 * 1024; 
     const blobData = new Blob([new Uint8Array(blobSize)]);
     
     let totalBytesUploaded = 0;
-    const testDuration = 5000; // 5 segundos de teste
+    const testDuration = 5000; 
     const startTime = performance.now();
 
-    // Função interna para disparar envios concorrentes
     async function uploadWorker() {
         while (performance.now() - startTime < testDuration) {
             try {
@@ -159,7 +159,6 @@ async function runUploadTest() {
                 const totalDuration = (performance.now() - startTime) / 1000;
                 const currentMbps = ((totalBytesUploaded * 8) / 1000000) / totalDuration;
 
-                // Atualiza o display e a linha rosa em tempo real
                 speedEl.innerText = currentMbps.toFixed(2);
                 uploadEl.innerText = `${currentMbps.toFixed(2)} Mbps`;
                 uploadData.push(currentMbps);
@@ -171,12 +170,14 @@ async function runUploadTest() {
         }
     }
 
-    // Dispara 3 conexões simultâneas para vencer a barreira da latência internacional
+    // Dispara 3 conexões simultâneas para furar a latência internacional
     await Promise.all([uploadWorker(), uploadWorker(), uploadWorker()]);
 }
 
-// --- CONTROLE PRINCIPAL DE ANIMAÇÃO ---
+// --- GATILHO PRINCIPAL ---
 startBtn.addEventListener("click", async () => {
+    modal.classList.add("hidden"); // Esconde o resumo anterior
+
     startBtn.disabled = true;
     startBtn.innerText = "Testando...";
     
@@ -186,22 +187,22 @@ startBtn.addEventListener("click", async () => {
     downloadEl.innerText = "--";
     speedEl.innerText = "0.00";
 
-    // 1. Roda o Ping
     await runPingTest();
-    
-    // 2. Roda o Download
     await runDownloadTest();
     
-    // 🧠 SUA VIZAÇÃO: Limpa o painel central e dá uma pausa de 1.2s antes do upload
+    // Suavização: Limpa o visor central e faz uma pausa confortável
     speedEl.innerText = "0.00";
     startBtn.innerText = "Preparando Upload...";
     await new Promise(r => setTimeout(r, 1200)); 
     
-    // 3. Roda o Upload Acelerado
     startBtn.innerText = "Testando Upload...";
     await runUploadTest();
 
-    // Finalização limpa
+    // Injeta os dados finais capturados no Painel de Resumo
+    document.getElementById("resDownload").innerText = downloadEl.innerText;
+    document.getElementById("resUpload").innerText = uploadEl.innerText;
+    modal.classList.remove("hidden"); // Exibe o Resumo com animação
+
     startBtn.disabled = false;
     startBtn.innerText = "Iniciar Teste";
     
