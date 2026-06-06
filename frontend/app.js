@@ -6,7 +6,6 @@ const downloadEl = document.getElementById("download");
 const uploadEl = document.getElementById("upload");
 const startBtn = document.getElementById("startBtn");
 
-// Seleção dos novos elementos da sobreposição
 const overlay = document.getElementById("resultOverlay");
 const closeOverlayBtn = document.getElementById("closeOverlayBtn");
 
@@ -139,7 +138,7 @@ async function runDownloadTest() {
     } catch (e) { console.error(e); }
 }
 
-// --- TESTE DE UPLOAD PARALELO ---
+// --- TESTE DE UPLOAD PARALELO SUAVIZADO ---
 async function runUploadTest() {
     uploadData = [];
     const blobSize = 1 * 1024 * 1024; 
@@ -148,6 +147,10 @@ async function runUploadTest() {
     let totalBytesUploaded = 0;
     const testDuration = 5000; 
     const startTime = performance.now();
+    
+    // Histórico para calcular a média móvel (Suavização de linha)
+    let smoothHistory = [];
+    const maxHistorySamples = 8; 
 
     async function uploadWorker() {
         while (performance.now() - startTime < testDuration) {
@@ -160,11 +163,19 @@ async function runUploadTest() {
                 
                 totalBytesUploaded += blobSize;
                 const totalDuration = (performance.now() - startTime) / 1000;
-                const currentMbps = ((totalBytesUploaded * 8) / 1000000) / totalDuration;
+                const rawMbps = ((totalBytesUploaded * 8) / 1000000) / totalDuration;
 
-                speedEl.innerText = currentMbps.toFixed(2);
-                uploadEl.innerText = `${currentMbps.toFixed(2)} Mbps`;
-                uploadData.push(currentMbps);
+                // Armazena no histórico para amortecer oscilações bruscas
+                smoothHistory.push(rawMbps);
+                if (smoothHistory.length > maxHistorySamples) smoothHistory.shift();
+
+                // Calcula a média móvel atualizada
+                const smoothMbps = smoothHistory.reduce((a, b) => a + b, 0) / smoothHistory.length;
+
+                // Atualiza a tela e o gráfico com os dados fluidos
+                speedEl.innerText = smoothMbps.toFixed(2);
+                uploadEl.innerText = `${smoothMbps.toFixed(2)} Mbps`;
+                uploadData.push(smoothMbps);
 
             } catch (e) {
                 console.error(e);
@@ -176,12 +187,12 @@ async function runUploadTest() {
     await Promise.all([uploadWorker(), uploadWorker(), uploadWorker()]);
 }
 
-// --- GATILHO PRINCIPAL ---
+// --- GATILHO PRINCIPAL (COM TRANSIÇÃO ESTILOSA) ---
 startBtn.addEventListener("click", async () => {
-    overlay.classList.add("hidden"); // Garante que a tela de resultado está fechada
+    overlay.classList.add("hidden"); 
 
     startBtn.disabled = true;
-    startBtn.innerText = "Testando...";
+    startBtn.innerText = "Aguardando Ping...";
     
     downloadData = [];
     uploadData = [];
@@ -189,23 +200,35 @@ startBtn.addEventListener("click", async () => {
     downloadEl.innerText = "--";
     speedEl.innerText = "0.00";
 
+    // 1. Executa o teste de Latência
     await runPingTest();
+    
+    // 2. Executa o teste de Download
+    startBtn.innerText = "Testando Download...";
     await runDownloadTest();
     
+    // 🧠 TRANSIÇÃO BACANA: Zera o medidor e faz contagem regressiva animada no botão
     speedEl.innerText = "0.00";
-    startBtn.innerText = "Preparando Upload...";
-    await new Promise(r => setTimeout(r, 1200)); 
     
+    startBtn.innerText = "Próximo teste em 3...";
+    await new Promise(r => setTimeout(r, 500));
+    
+    startBtn.innerText = "Próximo teste em 2...";
+    await new Promise(r => setTimeout(r, 500));
+    
+    startBtn.innerText = "Próximo teste em 1...";
+    await new Promise(r => setTimeout(r, 500));
+    
+    // 3. Executa o teste de Upload Suavizado
     startBtn.innerText = "Testando Upload...";
     await runUploadTest();
 
-    // Injeta os dados consolidados na tela de resultado sobreposta
+    // Consolida resultados finais na tela sobreposta
     document.getElementById("resDownload").innerText = downloadEl.innerText;
     document.getElementById("resUpload").innerText = uploadEl.innerText;
     document.getElementById("resPing").innerText = pingEl.innerText;
     document.getElementById("resJitter").innerText = jitterEl.innerText;
     
-    // Revela a tela cheia com efeito blur por cima de tudo
     overlay.classList.remove("hidden");
 
     startBtn.disabled = false;
@@ -215,7 +238,7 @@ startBtn.addEventListener("click", async () => {
     animationFrameId = null;
 });
 
-// Botão interno da tela de resultado para fechar o overlay e limpar o painel
+// Reset do Painel
 closeOverlayBtn.addEventListener("click", () => {
     overlay.classList.add("hidden");
     speedEl.innerText = "0.00";
@@ -224,7 +247,6 @@ closeOverlayBtn.addEventListener("click", () => {
     downloadEl.innerText = "--";
     uploadEl.innerText = "--";
     
-    // Limpa o canvas voltando para o estado inicial escuro
     ctx.fillStyle = "#0f172a"; 
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 });
