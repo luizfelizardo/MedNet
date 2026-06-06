@@ -18,14 +18,15 @@ let chartData = [];
 let animationFrameId = null;
 
 // --- FUNÇÃO DO GRÁFICO DINÂMICO GRADIENTE COM GRADE ---
+// --- FUNÇÃO DO GRÁFICO DINÂMICO GRADIENTE COM GRADE (VERSÃO FORÇADA) ---
 function drawChart() {
-    // Fundo sólido escuro para total contraste contra o CSS externo
+    // Garante que o canvas sempre tenha o tamanho certo
     ctx.fillStyle = "#0f172a"; 
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     
     const padding = 40;
     
-    // Desenhar Linhas de Grade de Fundo (Visual de Osciloscópio)
+    // Desenhar Linhas de Grade de Fundo
     ctx.strokeStyle = "rgba(255, 255, 255, 0.05)";
     ctx.lineWidth = 1;
     for (let i = padding; i < canvas.width - padding; i += 100) {
@@ -41,20 +42,26 @@ function drawChart() {
         ctx.stroke();
     }
 
-    if (chartData.length === 0) return;
+    // SE O ARRAY ESTIVER VAZIO, CRIA DOIS PONTOS ZERADOS PARA MANTER A LINHA ATIVA NA BASE
+    let displayData = [...chartData];
+    if (displayData.length === 0) {
+        displayData = [0, 0];
+    } else if (displayData.length === 1) {
+        displayData.push(displayData[0]);
+    }
 
     // Criar o gradiente azul neon para preenchimento abaixo da linha
     let gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
-    gradient.addColorStop(0, "rgba(0, 240, 255, 0.35)");
+    gradient.addColorStop(0, "rgba(0, 240, 255, 0.4)");
     gradient.addColorStop(1, "rgba(0, 240, 255, 0)");
 
     ctx.beginPath();
-    const maxVal = Math.max(...chartData, 10); 
+    const maxVal = Math.max(...displayData, 10); 
     
-    // Mapear pontos no espaço exato de 800x250
-    for (let i = 0; i < chartData.length; i++) {
-        const x = (i / (chartData.length - 1 || 1)) * (canvas.width - padding * 2) + padding;
-        const y = canvas.height - ((chartData[i] / maxVal) * (canvas.height - padding * 2) + padding);
+    // Mapear pontos na tela
+    for (let i = 0; i < displayData.length; i++) {
+        const x = (i / (displayData.length - 1)) * (canvas.width - padding * 2) + padding;
+        const y = canvas.height - ((displayData[i] / maxVal) * (canvas.height - padding * 2) + padding);
 
         if (i === 0) {
             ctx.moveTo(x, y);
@@ -63,16 +70,14 @@ function drawChart() {
         }
     }
 
-    // Configuração e renderização da Linha Neon Ciano Viva
+    // Configuração e renderização da Linha Neon Ciano Viva Em Cima de Tudo
     ctx.strokeStyle = "#00f0ff"; 
-    ctx.lineWidth = 4;           
+    ctx.lineWidth = 5; // Linha bem grossa para não sumir no monitor
     ctx.stroke();
 
     // Fechar área do gradiente
-    const firstX = padding;
-    const lastX = (canvas.width - padding * 2) + padding;
-    ctx.lineTo(lastX, canvas.height - padding);
-    ctx.lineTo(firstX, canvas.height - padding);
+    ctx.lineTo((canvas.width - padding) , canvas.height - padding);
+    ctx.lineTo(padding, canvas.height - padding);
     ctx.fillStyle = gradient;
     ctx.fill();
 
@@ -128,6 +133,7 @@ async function runDownloadTest() {
                 speedEl.innerText = currentMbps.toFixed(2);
                 downloadEl.innerText = `${currentMbps.toFixed(2)} Mbps`;
                 chartData.push(currentMbps); 
+                console.log("Pontos do gráfico:", chartData); // LINHA PARA TESTE
             }
         }
     } catch (e) {
