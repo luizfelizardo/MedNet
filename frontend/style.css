@@ -11,9 +11,10 @@ body {
     color: #ffffff;
     display: flex;
     justify-content: center;
-    align-items: center;
+    align-items: flex-start; /* Alinha o site pelo topo se ele crescer demais */
     min-height: 100vh;
-    padding: 15px;
+    padding: 40px 15px; /* Dá uma folga generosa nas pontas de cima e de baixo */
+    overflow-y: auto;   /* Garante que a barra de rolagem apareça se precisar */
 }
 
 .container {
@@ -25,6 +26,7 @@ body {
     box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
     text-align: center;
     position: relative;
+    margin: auto 0; /* Centraliza verticalmente de forma inteligente sem travar */
 }
 
 h1 {
