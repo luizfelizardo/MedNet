@@ -5,7 +5,6 @@ const jitterEl = document.getElementById("jitter");
 const downloadEl = document.getElementById("download");
 const uploadEl = document.getElementById("upload");
 const startBtn = document.getElementById("startBtn");
-
 const ispNameEl = document.getElementById("ispName");
 const ipAddressEl = document.getElementById("ipAddress");
 
@@ -23,34 +22,26 @@ let downloadData = [];
 let uploadData = [];
 let animationFrameId = null;
 
-// Variáveis de controle do motor de fluidez (LERP)
-let targetSpeed = 0;   // Velocidade real vinda da rede
-let currentSpeed = 0;  // Velocidade suavizada sendo exibida na tela
+let targetSpeed = 0;   
+let currentSpeed = 0;  
 let isTesting = false;
-let activeTestType = null; // 'download' ou 'upload'
+let activeTestType = null; 
 let tickerIntervalId = null;
 
-// --- MOTOR DE SUAVIZAÇÃO EM TEMPO REAL (60 FPS) ---
+// --- MOTOR DE SUAVIZAÇÃO LERP (60 FPS) ---
 function startInterpolationTicker() {
     if (tickerIntervalId) clearInterval(tickerIntervalId);
     
-    // Roda a cada 16ms (Equivalente a 60 frames por segundo)
     tickerIntervalId = setInterval(() => {
         if (!isTesting) return;
 
-        // Fator de suavização (0.1 = Ultra fluido/Deslize suave, 0.3 = Mais responsivo)
         const interpolationFactor = 0.12; 
-        
-        // Aplicação matemática do LERP: De forma suave, aproxima a velocidade atual da real
         currentSpeed += (targetSpeed - currentSpeed) * interpolationFactor;
         
-        // Evita flutuações residuais perto de zero
         if (currentSpeed < 0.05 && targetSpeed === 0) currentSpeed = 0;
 
-        // Atualiza o painel central com fluidez de milissegundos
         speedEl.innerText = currentSpeed.toFixed(2);
 
-        // Alimenta o array do gráfico com a velocidade perfeitamente suavizada
         if (activeTestType === "download") {
             downloadData.push(currentSpeed);
         } else if (activeTestType === "upload") {
@@ -87,7 +78,7 @@ function drawChart() {
 
     const maxVal = Math.max(...downloadData, ...uploadData, 10);
 
-    // Linha de Download (Azul Ciano)
+    // Linha de Download (Azul)
     if (downloadData.length > 0) {
         let dlPoints = [...downloadData];
         if (dlPoints.length === 1) dlPoints.push(dlPoints[0]);
@@ -111,7 +102,7 @@ function drawChart() {
         ctx.fill();
     }
 
-    // Linha de Upload (Rosa Magenta)
+    // Linha de Upload (Rosa)
     if (uploadData.length > 0) {
         let ulPoints = [...uploadData];
         if (ulPoints.length === 1) ulPoints.push(ulPoints[0]);
@@ -138,30 +129,27 @@ function drawChart() {
     animationFrameId = requestAnimationFrame(drawChart);
 }
 
-// --- FUNÇÃO PARA DETECTAR OPERADORA E IP ---
+// --- CORRIGIDO: FUNÇÃO DO PROVEDOR EM HTTPS SEGURO ---
 async function fetchProviderInfo() {
     try {
         ispNameEl.innerText = "Identificando rede...";
         
-        // Chamada para API pública de Geolocalização por IP
-        const response = await fetch("http://ip-api.com/json/?fields=status,org,as,query,city");
+        // Chamada usando a API ipapi.co que suporta HTTPS perfeitamente
+        const response = await fetch("https://ipapi.co/json/");
         const data = await response.json();
         
-        if (data.status === "success") {
-            // Limpa o nome da operadora (remove códigos de ASN se houver)
-            const provider = data.org || data.as || "Provedor Desconhecido";
+        if (data && !data.error) {
+            const provider = data.org || "Provedor Desconhecido";
             const city = data.city || "";
             
-            const fullLocation = city ? `${provider} (${city})` : provider;
-            
-            ispNameEl.innerText = fullLocation;
-            ipAddressEl.innerText = data.query;
+            ispNameEl.innerText = city ? `${provider} (${city})` : provider;
+            ipAddressEl.innerText = data.ip || "--.--.--.--";
         } else {
-            ispNameEl.innerText = "Internet Local";
+            ispNameEl.innerText = "Conexão Ativa";
         }
     } catch (e) {
         console.error("Erro ao buscar provedor:", e);
-        ispNameEl.innerText = "Conexão Ativa";
+        ispNameEl.innerText = "Conexão Local";
     }
 }
 
@@ -185,7 +173,7 @@ async function runPingTest() {
     jitterEl.innerText = `${jitter.toFixed(1)} ms`;
 }
 
-// --- TESTE DE DOWNLOAD OTIMIZADO ---
+// --- TESTE DE DOWNLOAD ---
 async function runDownloadTest() {
     downloadData = [];
     activeTestType = "download";
@@ -208,7 +196,6 @@ async function runDownloadTest() {
             const duration = (performance.now() - startTime) / 1000; 
             
             if (duration > 0) {
-                // Modifica apenas o alvo real de velocidade (O Ticker suaviza o resto a 60 FPS)
                 targetSpeed = ((loadedBytes * 8) / 1000000) / duration;
                 downloadEl.innerText = `${targetSpeed.toFixed(2)} Mbps`;
             }
@@ -219,7 +206,7 @@ async function runDownloadTest() {
     stopInterpolationTicker();
 }
 
-// --- TESTE DE UPLOAD MULTI-STREAM OTIMIZADO ---
+// --- TESTE DE UPLOAD PARALELO ---
 async function runUploadTest() {
     uploadData = [];
     activeTestType = "upload";
@@ -246,7 +233,6 @@ async function runUploadTest() {
                 totalBytesUploaded += blobSize;
                 const totalDuration = (performance.now() - startTime) / 1000;
                 
-                // Modifica apenas o alvo real de velocidade (O Ticker suaviza a 60 FPS)
                 targetSpeed = ((totalBytesUploaded * 8) / 1000000) / totalDuration;
                 uploadEl.innerText = `${targetSpeed.toFixed(2)} Mbps`;
 
@@ -263,12 +249,12 @@ async function runUploadTest() {
     stopInterpolationTicker();
 }
 
-// --- GATILHO PRINCIPAL COM CONTAGEM REGRESSIVA VISUAL ---
+// --- GATILHO PRINCIPAL ---
 startBtn.addEventListener("click", async () => {
     overlay.classList.add("hidden"); 
 
     startBtn.disabled = true;
-    startBtn.innerText = "Aguardando Ping...";
+    startBtn.innerText = "Identificando Rede...";
     
     downloadData = [];
     uploadData = [];
@@ -276,14 +262,16 @@ startBtn.addEventListener("click", async () => {
     downloadEl.innerText = "--";
     speedEl.innerText = "0.00";
 
-    fetchProviderInfo();
+    // Dispara a busca do Provedor de forma assíncrona e segura em HTTPS
+    await fetchProviderInfo();
 
+    startBtn.innerText = "Aguardando Ping...";
     await runPingTest();
     
     startBtn.innerText = "Testando Download...";
     await runDownloadTest();
     
-    // Transição fluida e elegante pós-download
+    // Transição elegante
     speedEl.innerText = "0.00";
     startBtn.innerText = "Próximo teste em 3...";
     await new Promise(r => setTimeout(r, 500));
@@ -295,7 +283,7 @@ startBtn.addEventListener("click", async () => {
     startBtn.innerText = "Testando Upload...";
     await runUploadTest();
 
-    // Fixa os valores coletados no overlay final
+    // Consolida dados finais no overlay
     document.getElementById("resDownload").innerText = downloadEl.innerText;
     document.getElementById("resUpload").innerText = uploadEl.innerText;
     document.getElementById("resPing").innerText = pingEl.innerText;
@@ -311,7 +299,7 @@ startBtn.addEventListener("click", async () => {
     animationFrameId = null;
 });
 
-// Reset do Sistema
+// Reset
 closeOverlayBtn.addEventListener("click", () => {
     overlay.classList.add("hidden");
     speedEl.innerText = "0.00";
@@ -319,6 +307,8 @@ closeOverlayBtn.addEventListener("click", () => {
     jitterEl.innerText = "--";
     downloadEl.innerText = "--";
     uploadEl.innerText = "--";
+    ispNameEl.innerText = "Aguardando início...";
+    ipAddressEl.innerText = "--.--.--.--";
     
     ctx.fillStyle = "#0f172a"; 
     ctx.fillRect(0, 0, canvas.width, canvas.height);
