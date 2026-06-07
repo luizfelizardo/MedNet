@@ -129,19 +129,16 @@ function drawChart() {
     animationFrameId = requestAnimationFrame(drawChart);
 }
 
-// --- CORRIGIDO: FUNÇÃO BUSCA PROVEDOR VIA BACKEND PRÓPRIO ---
+// --- FUNÇÃO BUSCA PROVEDOR VIA BACKEND PRÓPRIO ---
 async function fetchProviderInfo() {
     try {
         ispNameEl.innerText = "Identificando rede...";
-        
-        // Faz a requisição para o SEU backend, eliminando erros de DNS de terceiros
         const response = await fetch(`${API}/provider-info`);
         const data = await response.json();
         
         if (data && data.success) {
             const provider = data.isp;
             const city = data.city;
-            
             ispNameEl.innerText = city ? `${provider} (${city})` : provider;
             ipAddressEl.innerText = data.ip;
         } else {
@@ -262,7 +259,6 @@ startBtn.addEventListener("click", async () => {
     downloadEl.innerText = "--";
     speedEl.innerText = "0.00";
 
-    // Dispara a busca do Provedor de forma assíncrona e segura em HTTPS
     await fetchProviderInfo();
 
     startBtn.innerText = "Aguardando Ping...";
@@ -271,7 +267,7 @@ startBtn.addEventListener("click", async () => {
     startBtn.innerText = "Testando Download...";
     await runDownloadTest();
     
-    // Transição elegante
+    // Transição elegante pós-download
     speedEl.innerText = "0.00";
     startBtn.innerText = "Próximo teste em 3...";
     await new Promise(r => setTimeout(r, 500));
@@ -283,7 +279,25 @@ startBtn.addEventListener("click", async () => {
     startBtn.innerText = "Testando Upload...";
     await runUploadTest();
 
-    // Consolida dados finais no overlay
+    // Injeção de dados e Veredicto de UX
+    const finalDownload = parseFloat(downloadEl.innerText) || 0;
+    const verdictEl = document.getElementById("ispVerdict");
+    verdictEl.className = "isp-verdict";
+
+    if (finalDownload >= 100) {
+        verdictEl.innerText = "Sua conexão de Internet é muito rápida! 🚀";
+        verdictEl.classList.add("fast");
+    } else if (finalDownload >= 50 && finalDownload < 100) {
+        verdictEl.innerText = "Sua conexão de Internet é boa. 👍";
+        verdictEl.classList.add("good");
+    } else if (finalDownload <= 10) {
+        verdictEl.innerText = "Sua conexão de Internet está lenta. ⚠️";
+        verdictEl.classList.add("slow");
+    } else {
+        verdictEl.innerText = "Sua conexão de Internet é estável e regular. ⚖️";
+        verdictEl.classList.add("good");
+    }
+
     document.getElementById("resDownload").innerText = downloadEl.innerText;
     document.getElementById("resUpload").innerText = uploadEl.innerText;
     document.getElementById("resPing").innerText = pingEl.innerText;

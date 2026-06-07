@@ -11,17 +11,17 @@ body {
     color: #ffffff;
     display: flex;
     justify-content: center;
-    align-items: center; /* Centraliza verticalmente no monitor */
+    align-items: center;
     min-height: 100vh;
     padding: 15px;
-    overflow-y: auto; /* Permite rolagem apenas se a tela for muito pequena (ex: celular) */
+    overflow-y: auto;
 }
 
-/* Container Principal Otimizado */
+/* Container Principal */
 .container {
     background-color: #131c2e;
     border-radius: 16px;
-    padding: 20px 30px; /* Reduzido o padding vertical para economizar tela */
+    padding: 20px 30px;
     width: 100%;
     max-width: 800px;
     box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
@@ -30,18 +30,18 @@ body {
 }
 
 h1 {
-    font-size: 1.8rem; /* Um pouco menor para não empurrar o resto */
-    margin-bottom: 15px; /* Margem reduzida */
+    font-size: 1.8rem;
+    margin-bottom: 15px;
     color: #ffffff;
 }
 
-/* Painel de Velocidade Atual Compacto */
+/* Painel de Velocidade Atual */
 .speed-box {
-    margin-bottom: 10px; /* Reduzido o espaço embaixo da velocidade */
+    margin-bottom: 10px;
 }
 
 .speed-value {
-    font-size: clamp(3.5rem, 8vw, 4.5rem); /* Calibrado o tamanho máximo */
+    font-size: clamp(3.5rem, 8vw, 4.5rem);
     font-weight: bold;
     color: #ffffff;
     line-height: 1;
@@ -55,7 +55,7 @@ h1 {
 
 /* Box do Provedor */
 .provider-box {
-    margin-bottom: 20px; /* Reduzido de 30px para 20px */
+    margin-bottom: 20px;
     font-size: 0.9rem;
     color: #94a3b8;
     font-weight: 500;
@@ -74,17 +74,17 @@ h1 {
     color: #334155;
 }
 
-/* Grid de Estatísticas Justo */
+/* Grid de Estatísticas */
 .stats {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
     gap: 12px;
-    margin-bottom: 15px; /* Espaço otimizado */
+    margin-bottom: 15px;
 }
 
 .card {
     background-color: #1e293b;
-    padding: 10px 15px; /* Reduzido o padding interno das caixinhas */
+    padding: 10px 15px;
     border-radius: 10px;
     display: flex;
     flex-direction: column;
@@ -102,11 +102,11 @@ h1 {
     color: #00d4ff;
 }
 
-/* --- GRÁFICO OTIMIZADO PARA COMPACTAÇÃO --- */
+/* Container e Canvas do Gráfico */
 .chart-container {
     width: 100%;
     max-width: 800px;
-    margin: 15px auto; /* Reduzido as margens superior e inferior */
+    margin: 15px auto;
     background-color: #0f172a;
     border-radius: 12px;
     overflow: hidden;
@@ -117,15 +117,15 @@ h1 {
     display: block;
     width: 100%;
     height: auto;
-    max-height: 180px; /* Limita fisicamente a altura do canvas no computador */
+    max-height: 180px;
 }
 
-/* Botão de Iniciar */
+/* Botão Principal */
 button {
     background: linear-gradient(135deg, #00b4db, #0083b0);
     color: white;
     border: none;
-    padding: 12px 40px; /* Ajustado tamanho do botão */
+    padding: 12px 40px;
     font-size: 1.1rem;
     font-weight: bold;
     border-radius: 50px;
@@ -187,8 +187,21 @@ button:disabled {
     font-weight: bold;
     color: #38bdf8;
     letter-spacing: 2px;
-    margin-bottom: 15px;
+    margin-bottom: 10px;
 }
+
+/* Estilo do Veredicto de Velocidade */
+.isp-verdict {
+    font-size: 1.05rem;
+    font-weight: 600;
+    margin-bottom: 15px;
+    padding: 5px 10px;
+    line-height: 1.4;
+}
+
+.isp-verdict.fast { color: #00f0ff; }
+.isp-verdict.good { color: #eab308; }
+.isp-verdict.slow { color: #ff0055; }
 
 .result-grid {
     display: grid;
@@ -263,23 +276,23 @@ button:disabled {
     to { opacity: 1; }
 }
 
-/* --- REGRAS DE MEDIA QUERIES (RESPONSIVIDADE INTELIGENTE) --- */
+/* Responsividade */
 @media (max-width: 700px) {
     .stats {
-        grid-template-columns: repeat(2, 1fr); /* Vira duas colunas no celular */
+        grid-template-columns: repeat(2, 1fr);
         gap: 10px;
     }
     .container {
         padding: 20px 15px;
     }
     body {
-        align-items: flex-start; /* No celular, começa do topo para permitir rolar naturalmente */
+        align-items: flex-start;
     }
 }
 
 @media (max-width: 480px) {
     .result-grid {
-        grid-template-columns: 1fr; /* Resultados empilham em telas de celular em pé */
+        grid-template-columns: 1fr;
     }
     h1 {
         font-size: 1.5rem;
