@@ -1,4 +1,4 @@
-/* Configurações Globais e Responsividade */
+/* Configurações Globais */
 * {
     margin: 0;
     padding: 0;
@@ -11,52 +11,52 @@ body {
     color: #ffffff;
     display: flex;
     justify-content: center;
-    align-items: flex-start; /* Alinha o site pelo topo se ele crescer demais */
+    align-items: center; /* Centraliza verticalmente no monitor */
     min-height: 100vh;
-    padding: 40px 15px; /* Dá uma folga generosa nas pontas de cima e de baixo */
-    overflow-y: auto;   /* Garante que a barra de rolagem apareça se precisar */
+    padding: 15px;
+    overflow-y: auto; /* Permite rolagem apenas se a tela for muito pequena (ex: celular) */
 }
 
+/* Container Principal Otimizado */
 .container {
     background-color: #131c2e;
     border-radius: 16px;
-    padding: 30px;
+    padding: 20px 30px; /* Reduzido o padding vertical para economizar tela */
     width: 100%;
-    max-width: 850px;
+    max-width: 800px;
     box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
     text-align: center;
     position: relative;
-    margin: auto 0; /* Centraliza verticalmente de forma inteligente sem travar */
 }
 
 h1 {
-    font-size: 2rem;
-    margin-bottom: 25px;
+    font-size: 1.8rem; /* Um pouco menor para não empurrar o resto */
+    margin-bottom: 15px; /* Margem reduzida */
     color: #ffffff;
 }
 
-/* Painel de Velocidade Atual */
+/* Painel de Velocidade Atual Compacto */
 .speed-box {
-    margin-bottom: 15px;
+    margin-bottom: 10px; /* Reduzido o espaço embaixo da velocidade */
 }
 
 .speed-value {
-    font-size: clamp(3.5rem, 10vw, 5rem);
+    font-size: clamp(3.5rem, 8vw, 4.5rem); /* Calibrado o tamanho máximo */
     font-weight: bold;
     color: #ffffff;
     line-height: 1;
 }
 
 .speed-unit {
-    font-size: 1.2rem;
+    font-size: 1.1rem;
     color: #64748b;
-    margin-top: 5px;
+    margin-top: 2px;
 }
 
-/* Estilo do Provedor e IP */
+/* Box do Provedor */
 .provider-box {
-    margin-bottom: 30px;
-    font-size: 0.95rem;
+    margin-bottom: 20px; /* Reduzido de 30px para 20px */
+    font-size: 0.9rem;
     color: #94a3b8;
     font-weight: 500;
     display: flex;
@@ -74,17 +74,17 @@ h1 {
     color: #334155;
 }
 
-/* Grid de Estatísticas Principal */
+/* Grid de Estatísticas Justo */
 .stats {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
-    gap: 15px;
-    margin-bottom: 25px;
+    gap: 12px;
+    margin-bottom: 15px; /* Espaço otimizado */
 }
 
 .card {
     background-color: #1e293b;
-    padding: 15px;
+    padding: 10px 15px; /* Reduzido o padding interno das caixinhas */
     border-radius: 10px;
     display: flex;
     flex-direction: column;
@@ -92,21 +92,21 @@ h1 {
 }
 
 .card span {
-    font-size: 0.85rem;
+    font-size: 0.8rem;
     color: #94a3b8;
-    margin-bottom: 5px;
+    margin-bottom: 3px;
 }
 
 .card strong {
-    font-size: clamp(1rem, 3vw, 1.25rem);
+    font-size: clamp(0.95rem, 2.5vw, 1.15rem);
     color: #00d4ff;
 }
 
-/* Container e Canvas do Gráfico */
+/* --- GRÁFICO OTIMIZADO PARA COMPACTAÇÃO --- */
 .chart-container {
     width: 100%;
     max-width: 800px;
-    margin: 25px auto;
+    margin: 15px auto; /* Reduzido as margens superior e inferior */
     background-color: #0f172a;
     border-radius: 12px;
     overflow: hidden;
@@ -117,22 +117,24 @@ h1 {
     display: block;
     width: 100%;
     height: auto;
+    max-height: 180px; /* Limita fisicamente a altura do canvas no computador */
 }
 
-/* Botões */
+/* Botão de Iniciar */
 button {
     background: linear-gradient(135deg, #00b4db, #0083b0);
     color: white;
     border: none;
-    padding: 15px 40px;
-    font-size: 1.2rem;
+    padding: 12px 40px; /* Ajustado tamanho do botão */
+    font-size: 1.1rem;
     font-weight: bold;
     border-radius: 50px;
     cursor: pointer;
     transition: all 0.3s ease;
     width: 100%;
-    max-width: 300px;
+    max-width: 260px;
     box-shadow: 0 4px 15px rgba(0, 180, 219, 0.4);
+    margin-top: 5px;
 }
 
 button:hover:not(:disabled) {
@@ -147,7 +149,7 @@ button:disabled {
     box-shadow: none;
 }
 
-/* Tela de Resultado Sobreposta (Overlay) */
+/* --- TELA DE RESULTADO SOBREPOSTA (OVERLAY) --- */
 .result-overlay {
     position: absolute;
     top: 0;
@@ -176,30 +178,30 @@ button:disabled {
     border-radius: 16px;
     padding: 25px;
     width: 100%;
-    max-width: 550px;
+    max-width: 500px;
     box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
 }
 
 .result-header {
-    font-size: 1rem;
+    font-size: 0.95rem;
     font-weight: bold;
     color: #38bdf8;
     letter-spacing: 2px;
-    margin-bottom: 20px;
+    margin-bottom: 15px;
 }
 
 .result-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 15px;
-    margin-bottom: 20px;
+    margin-bottom: 15px;
 }
 
 .result-card {
     display: flex;
     align-items: center;
     background: #0b0f19;
-    padding: 15px;
+    padding: 12px;
     border-radius: 10px;
     border-left: 5px solid #334155;
 }
@@ -208,22 +210,22 @@ button:disabled {
 .result-card.ul { border-left-color: #ff007f; }
 
 .arrow {
-    font-size: 2rem;
+    font-size: 1.8rem;
     font-weight: bold;
-    margin-right: 12px;
+    margin-right: 10px;
 }
 .result-card.dl .arrow { color: #00f0ff; }
 .result-card.ul .arrow { color: #ff007f; }
 
 .result-info label {
     display: block;
-    font-size: 0.7rem;
+    font-size: 0.65rem;
     color: #64748b;
     font-weight: 600;
 }
 
 .result-info span {
-    font-size: 1.4rem;
+    font-size: 1.3rem;
     font-weight: bold;
     color: #ffffff;
 }
@@ -232,15 +234,15 @@ button:disabled {
     display: flex;
     justify-content: center;
     flex-wrap: wrap;
-    gap: 15px 25px;
-    margin-bottom: 25px;
+    gap: 10px 20px;
+    margin-bottom: 20px;
     background: rgba(255, 255, 255, 0.03);
-    padding: 10px;
+    padding: 8px;
     border-radius: 8px;
 }
 
 .mini-card span {
-    font-size: 0.85rem;
+    font-size: 0.8rem;
     color: #94a3b8;
 }
 
@@ -252,10 +254,8 @@ button:disabled {
     background: linear-gradient(135deg, #1e293b, #334155);
     border: 1px solid #475569;
     box-shadow: none;
-}
-.close-btn:hover {
-    background: linear-gradient(135deg, #334155, #475569);
-    box-shadow: 0 4px 12px rgba(255, 255, 255, 0.05);
+    padding: 10px 30px;
+    font-size: 1rem;
 }
 
 @keyframes fadeIn {
@@ -263,22 +263,28 @@ button:disabled {
     to { opacity: 1; }
 }
 
-/* Responsividade */
+/* --- REGRAS DE MEDIA QUERIES (RESPONSIVIDADE INTELIGENTE) --- */
 @media (max-width: 700px) {
     .stats {
-        grid-template-columns: repeat(2, 1fr);
+        grid-template-columns: repeat(2, 1fr); /* Vira duas colunas no celular */
         gap: 10px;
     }
     .container {
         padding: 20px 15px;
     }
+    body {
+        align-items: flex-start; /* No celular, começa do topo para permitir rolar naturalmente */
+    }
 }
 
 @media (max-width: 480px) {
     .result-grid {
-        grid-template-columns: 1fr;
+        grid-template-columns: 1fr; /* Resultados empilham em telas de celular em pé */
     }
     h1 {
-        font-size: 1.6rem;
+        font-size: 1.5rem;
+    }
+    .speed-value {
+        font-size: 3rem;
     }
 }
