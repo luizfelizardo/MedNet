@@ -129,27 +129,27 @@ function drawChart() {
     animationFrameId = requestAnimationFrame(drawChart);
 }
 
-// --- CORRIGIDO: FUNÇÃO DO PROVEDOR EM HTTPS SEGURO ---
+// --- CORRIGIDO: FUNÇÃO BUSCA PROVEDOR VIA BACKEND PRÓPRIO ---
 async function fetchProviderInfo() {
     try {
         ispNameEl.innerText = "Identificando rede...";
         
-        // Chamada usando a API ipapi.co que suporta HTTPS perfeitamente
-        const response = await fetch("https://ipapi.co/json/");
+        // Faz a requisição para o SEU backend, eliminando erros de DNS de terceiros
+        const response = await fetch(`${API}/provider-info`);
         const data = await response.json();
         
-        if (data && !data.error) {
-            const provider = data.org || "Provedor Desconhecido";
-            const city = data.city || "";
+        if (data && data.success) {
+            const provider = data.isp;
+            const city = data.city;
             
             ispNameEl.innerText = city ? `${provider} (${city})` : provider;
-            ipAddressEl.innerText = data.ip || "--.--.--.--";
+            ipAddressEl.innerText = data.ip;
         } else {
             ispNameEl.innerText = "Conexão Ativa";
         }
     } catch (e) {
-        console.error("Erro ao buscar provedor:", e);
-        ispNameEl.innerText = "Conexão Local";
+        console.error("Erro ao buscar provedor via API própria:", e);
+        ispNameEl.innerText = "Conexão Ativa";
     }
 }
 
