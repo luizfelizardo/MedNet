@@ -6,6 +6,9 @@ const downloadEl = document.getElementById("download");
 const uploadEl = document.getElementById("upload");
 const startBtn = document.getElementById("startBtn");
 
+const ispNameEl = document.getElementById("ispName");
+const ipAddressEl = document.getElementById("ipAddress");
+
 const overlay = document.getElementById("resultOverlay");
 const closeOverlayBtn = document.getElementById("closeOverlayBtn");
 
@@ -135,6 +138,33 @@ function drawChart() {
     animationFrameId = requestAnimationFrame(drawChart);
 }
 
+// --- FUNÇÃO PARA DETECTAR OPERADORA E IP ---
+async function fetchProviderInfo() {
+    try {
+        ispNameEl.innerText = "Identificando rede...";
+        
+        // Chamada para API pública de Geolocalização por IP
+        const response = await fetch("http://ip-api.com/json/?fields=status,org,as,query,city");
+        const data = await response.json();
+        
+        if (data.status === "success") {
+            // Limpa o nome da operadora (remove códigos de ASN se houver)
+            const provider = data.org || data.as || "Provedor Desconhecido";
+            const city = data.city || "";
+            
+            const fullLocation = city ? `${provider} (${city})` : provider;
+            
+            ispNameEl.innerText = fullLocation;
+            ipAddressEl.innerText = data.query;
+        } else {
+            ispNameEl.innerText = "Internet Local";
+        }
+    } catch (e) {
+        console.error("Erro ao buscar provedor:", e);
+        ispNameEl.innerText = "Conexão Ativa";
+    }
+}
+
 // --- TESTE DE PING ---
 async function runPingTest() {
     let pings = [];
@@ -246,6 +276,8 @@ startBtn.addEventListener("click", async () => {
     downloadEl.innerText = "--";
     speedEl.innerText = "0.00";
 
+    fetchProviderInfo();
+
     await runPingTest();
     
     startBtn.innerText = "Testando Download...";
@@ -268,6 +300,7 @@ startBtn.addEventListener("click", async () => {
     document.getElementById("resUpload").innerText = uploadEl.innerText;
     document.getElementById("resPing").innerText = pingEl.innerText;
     document.getElementById("resJitter").innerText = jitterEl.innerText;
+    document.getElementById("resISP").innerText = ispNameEl.innerText;
     
     overlay.classList.remove("hidden");
 

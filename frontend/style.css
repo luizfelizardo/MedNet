@@ -263,3 +263,31 @@ button:disabled {
         font-size: 1.1rem;
     }
 }
+
+/* --- ESTILO DO PROVEDOR E IP --- */
+.provider-box {
+    margin-top: -15px;
+    margin-bottom: 30px;
+    font-size: 0.95rem;
+    color: #94a3b8;
+    font-weight: 500;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+}
+
+.provider-box #ispName {
+    color: #38bdf8; /* Destaca o nome da operadora em azul claro */
+    font-weight: 600;
+}
+
+.provider-box .separator {
+    color: #334155;
+}
+
+/* Ajuste rápido para o modal de resultado caber a info extra */
+.extra-stats {
+    flex-wrap: wrap; /* Garante que não quebre em telas pequenas */
+    gap: 15px 25px !important;
+}
